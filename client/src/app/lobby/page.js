@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 import HomeMenu from "@/components/HomeMenu";
@@ -50,7 +50,9 @@ export default function LobbyPage() {
 
       {/* Main Action Center */}
       <div className="flex-1 flex items-center justify-center py-6 px-4 sm:p-8">
-        <HomeMenu name={name} />
+        <Suspense fallback={<div className="text-white/50 text-sm">Loading...</div>}>
+          <HomeMenu name={name} />
+        </Suspense>
       </div>
 
       {/* Footer Info */}
