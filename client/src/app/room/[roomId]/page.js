@@ -270,6 +270,9 @@ export default function RoomPage() {
     socket.on("kicked", handleKicked);
 
     return () => {
+      // Explicitly emit leave-room so the server updates count and broadcasts to other users immediately
+      socket.emit("leave-room", { roomId, name });
+
       socket.off("receive-message", handleReceiveMessage);
       socket.off("room-details", handleRoomDetails);
       socket.off("error-message", handleErrorMessage);
@@ -278,6 +281,23 @@ export default function RoomPage() {
       socket.off("kicked", handleKicked);
     };
   }, [roomId, name, router]);
+
+  // Handle browser tab close, refreshes, or navigation to external URLs
+  useEffect(() => {
+    if (!name || !roomId) return;
+
+    const handleTabClose = () => {
+      socket.emit("leave-room", { roomId, name });
+    };
+
+    window.addEventListener("beforeunload", handleTabClose);
+    window.addEventListener("pagehide", handleTabClose);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleTabClose);
+      window.removeEventListener("pagehide", handleTabClose);
+    };
+  }, [roomId, name]);
 
   // Recording timer simulation
   useEffect(() => {
