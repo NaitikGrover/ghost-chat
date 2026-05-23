@@ -7,6 +7,8 @@ const cors = require("cors");
 const rooms = require("./rooms/rooms");
 const { v4: uuidv4 } = require("uuid");
 
+let randomQueue = [];
+
 const app = express();
 
 app.use(cors());
@@ -123,7 +125,8 @@ io.on("connection", (socket) => {
       maxUsers: room.maxUsers,
       createdAt: room.createdAt,
       duration: room.duration,
-      adminName: room.adminName
+      adminName: room.adminName,
+      isRandom: room.isRandom
     });
 
     console.log(name, "joined", roomId);
@@ -294,6 +297,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Disconnected:", socket.id);
+    randomQueue = randomQueue.filter(u => u.id !== socket.id);
     
     // Clean up disconnected users to free up capacity
     for (const roomId in rooms) {
@@ -327,7 +331,86 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("join-random-queue", ({ name, avatar }) => {
+    // Prevent duplicate entries
+    if (randomQueue.some(u => u.id === socket.id)) return;
+
+    randomQueue.push({ id: socket.id, name, avatar });
+    console.log(`User ${name} entered random queue. Queue length: ${randomQueue.length}`);
+
+    // Matchmaking is now handled by the setInterval below
+  });
+
+  socket.on("leave-random-queue", () => {
+    randomQueue = randomQueue.filter(u => u.id !== socket.id);
+    console.log(`User left random queue. Queue length: ${randomQueue.length}`);
+  });
+
+  socket.on("skip-peer", ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room || !room.isRandom) return;
+
+    // Find the current user who clicked Skip
+    const skippingUser = room.users.find(u => u.id === socket.id);
+    if (!skippingUser) return;
+
+    // Notify the other user (if any) that they were skipped
+    const otherUser = room.users.find(u => u.id !== socket.id);
+    if (otherUser) {
+      io.to(otherUser.id).emit("peer-skipped");
+    }
+
+    // Force everyone to leave the socket room
+    io.in(roomId).socketsLeave(roomId);
+
+    // Delete the room
+    delete rooms[roomId];
+    console.log(`Room ${roomId} skipped by ${skippingUser.name} and dissolved.`);
+  });
+
 });
+
+// Matchmaking interval: Runs every 5 seconds to match users in the queue
+setInterval(() => {
+  while (randomQueue.length >= 2) {
+    const user1 = randomQueue.shift();
+    const user2 = randomQueue.shift();
+
+    const socket1 = io.sockets.sockets.get(user1.id);
+    const socket2 = io.sockets.sockets.get(user2.id);
+
+    // If one of the users disconnected while in queue, put the other back and continue
+    if (!socket1 || !socket2) {
+      if (socket1) randomQueue.unshift(user1);
+      if (socket2) randomQueue.unshift(user2);
+      continue;
+    }
+
+    const roomId = `rand-${uuidv4().slice(0, 6)}`;
+    rooms[roomId] = {
+      roomId,
+      roomName: "Random Tunnel",
+      maxUsers: 2,
+      duration: 30, // 30 minutes
+      createdAt: Date.now(),
+      adminName: null, // NO OWNERS OR ADMIN POWERS
+      bannedUsers: [],
+      isRandom: true,
+      users: [
+        { id: user1.id, name: user1.name, avatar: user1.avatar },
+        { id: user2.id, name: user2.name, avatar: user2.avatar }
+      ]
+    };
+
+    socket1.join(roomId);
+    socket1.emit("random-match", { roomId });
+    
+    socket2.join(roomId);
+    socket2.emit("random-match", { roomId });
+
+    console.log(`Matched ${user1.name} and ${user2.name} in room ${roomId}`);
+  }
+}, 5000);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

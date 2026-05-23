@@ -22,6 +22,7 @@ import {
   ExternalLink,
   Users,
   Plus,
+  Shuffle,
   Download,
   FileText,
   Video,
@@ -212,6 +213,11 @@ export default function RoomPage() {
     router.push("/lobby");
   };
 
+  const handleSkip = () => {
+    socket.emit("skip-peer", { roomId });
+    router.push("/lobby?requeue=true");
+  };
+
   const confirmMakeAdmin = () => {
     setConfirmModal(null);
     if (targetAdminUser) {
@@ -262,12 +268,17 @@ export default function RoomPage() {
     };
     const handleKicked = (msg) => setErrorMsg(msg);
 
+    const handlePeerSkipped = () => {
+      setErrorMsg("The other person left the chat.");
+    };
+
     socket.on("receive-message", handleReceiveMessage);
     socket.on("room-details", handleRoomDetails);
     socket.on("error-message", handleErrorMessage);
     socket.on("room-expired", handleRoomExpired);
     socket.on("user-joined", handleUserJoined);
     socket.on("kicked", handleKicked);
+    socket.on("peer-skipped", handlePeerSkipped);
 
     return () => {
       // Explicitly emit leave-room so the server updates count and broadcasts to other users immediately
@@ -279,6 +290,7 @@ export default function RoomPage() {
       socket.off("room-expired", handleRoomExpired);
       socket.off("user-joined", handleUserJoined);
       socket.off("kicked", handleKicked);
+      socket.off("peer-skipped", handlePeerSkipped);
     };
   }, [roomId, name, router]);
 
@@ -472,21 +484,34 @@ export default function RoomPage() {
   if (!name) return null;
 
   if (errorMsg) {
+    const isSkipped = errorMsg.includes("skipped") || errorMsg.includes("left the chat");
     return (
-      <main className="h-screen w-full flex items-center justify-center relative z-10 p-6 font-sans bg-black">
+      <main className="h-screen w-full flex items-center justify-center relative z-10 p-6 font-sans bg-black animate-in fade-in">
         <div className="bg-[#1c1c1e] border border-white/5 p-8 rounded-3xl max-w-md w-full text-center space-y-6 animate-in zoom-in duration-500 shadow-2xl">
-          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto border border-red-500/20">
-            <Shield className="w-8 h-8 text-red-500" />
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto border ${
+            isSkipped ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20"
+          }`}>
+            {isSkipped ? (
+              <Shuffle className="w-8 h-8 text-amber-500 animate-pulse" />
+            ) : (
+              <Shield className="w-8 h-8 text-red-500" />
+            )}
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Connection Dropped</h2>
+            <h2 className="text-2xl font-black text-white tracking-tighter uppercase">
+              {isSkipped ? "Chat Ended" : "Connection Dropped"}
+            </h2>
             <p className="text-sm text-zinc-500 font-medium">{errorMsg}</p>
           </div>
           <button 
-            onClick={() => router.push("/lobby")}
-            className="w-full h-12 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
+            onClick={() => router.push(isSkipped ? "/lobby?requeue=true" : "/lobby")}
+            className={`w-full h-12 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${
+              isSkipped 
+                ? "bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/25 text-amber-400" 
+                : "bg-white/5 border border-white/10 hover:bg-white/10 text-white"
+            }`}
           >
-            Return to Lobby
+            {isSkipped ? "Find Next" : "Return to Lobby"}
           </button>
         </div>
       </main>
@@ -650,6 +675,18 @@ export default function RoomPage() {
 
         {/* Right Action Controls - Icon Only */}
         <div className="flex items-center gap-1 sm:gap-2 mr-1">
+          {/* Skip Peer Action (Random chat only) */}
+          {roomDetails?.isRandom && (
+            <button
+              type="button"
+              title="Skip (Find Next)"
+              onClick={handleSkip}
+              className="flex items-center gap-1.5 px-3 h-8 sm:h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/25 hover:border-amber-500/40 text-amber-400 hover:text-amber-300 transition-all font-mono text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer"
+            >
+              <Shuffle className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Next Chat</span>
+            </button>
+          )}
           {/* Active Users Count and List Trigger */}
           <button
             type="button"
@@ -668,6 +705,8 @@ export default function RoomPage() {
           </button>
 
           {/* Room Code Copy Box */}
+          {!roomDetails?.isRandom && (
+          <>
           <button
             type="button"
             title="Click to copy room code"
@@ -754,6 +793,8 @@ export default function RoomPage() {
               )}
             </AnimatePresence>
           </div>
+          </>
+          )}
 
           {/* Leave Button - Icon Only */}
           <button 
@@ -820,6 +861,8 @@ export default function RoomPage() {
                     </button>
 
                     {/* Copy Code */}
+                    {!roomDetails?.isRandom && (
+                    <>
                     <button
                       type="button"
                       onClick={() => {
@@ -854,6 +897,8 @@ export default function RoomPage() {
                     </button>
 
                     <div className="h-px bg-white/5 my-1 w-full" />
+                    </>
+                    )}
 
                     {/* Leave Room */}
                     <button

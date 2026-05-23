@@ -1,17 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import JoinRoom from "./JoinRoom";
 import CreateRoom from "./CreateRoom";
 import { Shuffle, Plus, LogIn, Users, ShieldCheck, Lock, EyeOff, ShieldAlert, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AdyberLogo from "./AdyberLogo";
+import socket from "@/lib/socket";
 
 export default function HomeMenu({ name }) {
   const { avatarUrl, avatar } = useUser();
   const [mode, setMode] = useState("");
   const [showRandomToast, setShowRandomToast] = useState(false);
+  const [isQueuing, setIsQueuing] = useState(false);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const requeue = searchParams.get("requeue");
+
+  const startQueuing = () => {
+    setIsQueuing(true);
+    socket.emit("join-random-queue", { name, avatar });
+  };
+
+  const cancelQueuing = () => {
+    setIsQueuing(false);
+    socket.emit("leave-random-queue");
+  };
+
+  // Re-queue automatically if returning from a skip
+  useEffect(() => {
+    if (requeue === "true" && name) {
+      startQueuing();
+      // Remove query param to prevent endless looping on page refreshes
+      const url = new URL(window.location.href);
+      url.searchParams.delete("requeue");
+      window.history.replaceState({}, "", url.pathname);
+    }
+  }, [requeue, name]);
+
+  // Matchmaking listener
+  useEffect(() => {
+    const handleRandomMatch = ({ roomId }) => {
+      setIsQueuing(false);
+      router.push(`/room/${roomId}`);
+    };
+
+    socket.on("random-match", handleRandomMatch);
+
+    return () => {
+      socket.off("random-match", handleRandomMatch);
+      // Clean up queue if unmounting
+      socket.emit("leave-random-queue");
+    };
+  }, [router]);
 
   if (mode === "join") {
     return (
@@ -132,11 +176,7 @@ export default function HomeMenu({ name }) {
         {/* Random Chat Mobile Card */}
         <motion.button
           whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            setShowRandomToast(true);
-            const timeout = setTimeout(() => setShowRandomToast(false), 3000);
-            return () => clearTimeout(timeout);
-          }}
+          onClick={startQueuing}
           className="w-full bg-[#050505]/90 backdrop-blur-3xl border border-white/5 rounded-2xl p-5 flex items-center justify-between text-left group transition-all duration-300 shadow-2xl relative overflow-hidden cursor-pointer"
         >
 
@@ -148,7 +188,7 @@ export default function HomeMenu({ name }) {
             <div className="min-w-0">
               <span className="text-[8px] uppercase tracking-[0.3em] text-zinc-500 font-bold font-sans block mb-0.5">Connect Instantly</span>
               <h3 className="text-xl font-black text-white tracking-tight uppercase font-sans">Random Chat</h3>
-              <p className="text-[11px] text-zinc-500 font-medium leading-relaxed font-sans truncate max-w-[190px] sm:max-w-xs">Pair securely with an anonymous peer.</p>
+              <p className="text-[11px] text-zinc-500 font-medium leading-relaxed font-sans truncate max-w-[190px] sm:max-w-xs">Chat with someone randomly and anonymously.</p>
             </div>
           </div>
           
@@ -169,6 +209,7 @@ export default function HomeMenu({ name }) {
           
           {/* Hero Action: Random Chat */}
           <motion.button
+            onClick={startQueuing}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             className="bg-white/1 hover:bg-white/3 border border-white/5 rounded-3xl p-6 sm:p-10 flex flex-col justify-between items-start text-left min-h-[200px] sm:min-h-[260px] group transition-all duration-500 shadow-[0_0_50px_rgba(255,255,255,0.01)] hover:shadow-[0_0_80px_rgba(255,255,255,0.05)] w-full cursor-pointer"
@@ -188,7 +229,7 @@ export default function HomeMenu({ name }) {
               <h3 className="text-3xl sm:text-5xl font-black text-white tracking-tight uppercase font-sans">
                 Random Chat
               </h3>
-              <p className="text-xs sm:text-sm text-zinc-500 max-w-sm font-medium leading-relaxed font-sans">Pair with an anonymous peer through a secure encrypted tunnel.</p>
+              <p className="text-xs sm:text-sm text-zinc-500 max-w-sm font-medium leading-relaxed font-sans">Chat with someone randomly and anonymously.</p>
             </div>
           </motion.button>
 
@@ -240,6 +281,66 @@ export default function HomeMenu({ name }) {
         </div>
 
       </div>
+
+      {/* Queuing / Searching for Peer Modal Overlay */}
+      <AnimatePresence>
+        {isQueuing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-999 flex items-center justify-center bg-black/85 backdrop-blur-md p-6 animate-in fade-in"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="bg-[#050506]/98 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-6 relative overflow-hidden font-sans"
+            >
+              {/* Top ambient glow */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-cyan-500/50 blur-md" />
+
+              {/* Animated Glowing Radar Pulse */}
+              <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                {/* Outward Bouncing Glow rings */}
+                <span className="absolute inset-0 rounded-full bg-cyan-400/5 animate-ping" style={{ animationDuration: "3s" }} />
+                <span className="absolute inset-2 rounded-full border border-cyan-400/20 animate-pulse duration-1000" />
+                <span className="absolute inset-4 rounded-full bg-cyan-500/10 animate-ping" style={{ animationDuration: "2s" }} />
+                
+                {/* Central Icon */}
+                <div className="w-14 h-14 rounded-full bg-[#0a0a0c] border border-cyan-500/30 flex items-center justify-center text-cyan-400 z-10 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                  <Shuffle className="w-5 h-5 animate-pulse" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_6px_#22d3ee]" />
+                  <span className="text-[9px] font-mono text-cyan-400 uppercase tracking-[0.3em] font-black">
+                    Searching Network
+                  </span>
+                </div>
+                <h3 className="text-2xl font-black text-white tracking-tighter uppercase font-sans">
+                  Looking for match
+                </h3>
+                <p className="text-xs text-zinc-500 font-medium leading-relaxed max-w-[240px] mx-auto font-sans">
+                  Finding an anonymous peer. You will connect automatically.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={cancelQueuing}
+                className="w-full h-11 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-zinc-400 hover:text-white font-bold text-xs uppercase tracking-widest transition-all cursor-pointer group"
+              >
+                <span className="group-hover:text-white transition-colors font-sans">Cancel Search</span>
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
