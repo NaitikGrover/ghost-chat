@@ -1208,7 +1208,7 @@ export default function RoomPage() {
                 onKeyDown={handleKeyDown}
                 placeholder="Message..."
                 rows={1}
-                className="flex-1 bg-transparent text-[14.5px] font-medium tracking-wide text-white focus:outline-none placeholder:text-zinc-500 resize-none max-h-40 py-2 scrollbar-none"
+                className="flex-1 bg-transparent sm:text-[14.5px] text-base font-medium tracking-wide text-white focus:outline-none placeholder:text-zinc-500 resize-none max-h-40 py-2 scrollbar-none"
               />
             )}
 

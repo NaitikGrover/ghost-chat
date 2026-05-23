@@ -70,7 +70,7 @@ export default function CreateRoom({ name, avatar }) {
             placeholder="Room Name"
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
-            className="w-full bg-[#050505]/50 border border-white/10 hover:border-white/20 rounded-xl h-14 pl-12 pr-5 text-sm font-bold tracking-wide text-white focus:outline-none focus:border-white/40 transition-all placeholder:text-zinc-600 placeholder:font-medium shadow-inner"
+            className="w-full bg-[#050505]/50 border border-white/10 hover:border-white/20 rounded-xl h-14 pl-12 pr-5 sm:text-sm text-base font-bold tracking-wide text-white focus:outline-none focus:border-white/40 transition-all placeholder:text-zinc-600 placeholder:font-medium shadow-inner"
           />
         </div>
 

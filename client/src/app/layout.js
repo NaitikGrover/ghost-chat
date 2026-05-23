@@ -21,6 +21,13 @@ export const metadata = {
   description: "A real-time anonymous chat platform with ephemeral rooms. Built by NaitikGrover.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 import { UserProvider } from "@/context/UserContext";
 
 export default function RootLayout({ children }) {
