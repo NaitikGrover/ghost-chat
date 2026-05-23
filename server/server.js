@@ -11,7 +11,9 @@ let randomQueue = [];
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "*"
+}));
 
 const server = http.createServer(app);
 
@@ -19,7 +21,7 @@ const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
 
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL,
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
