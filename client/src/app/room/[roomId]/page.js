@@ -44,6 +44,8 @@ export default function RoomPage() {
   const [inputMessage, setInputMessage] = useState("");
   const [roomNameDisplay, setRoomNameDisplay] = useState("Reet");
   const [errorMsg, setErrorMsg] = useState("");
+  const [viewportHeight, setViewportHeight] = useState("100dvh");
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   // Reply Mode State
   const [replyTo, setReplyTo] = useState(null);
@@ -141,6 +143,55 @@ export default function RoomPage() {
 
     return () => clearInterval(timerInterval);
   }, [roomDetails]);
+
+  // Handle mobile visual viewport (virtual keyboard height adjustments)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      if (window.visualViewport) {
+        const isMobile = window.innerWidth < 768;
+        const keyboardOpen = isMobile && window.visualViewport.height < window.innerHeight * 0.85;
+        setIsKeyboardOpen(keyboardOpen);
+        setViewportHeight(`${window.visualViewport.height}px`);
+      } else {
+        setViewportHeight("100dvh");
+        setIsKeyboardOpen(false);
+      }
+    };
+
+    handleResize();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", handleResize);
+      window.visualViewport.addEventListener("scroll", handleResize);
+    }
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", handleResize);
+        window.visualViewport.removeEventListener("scroll", handleResize);
+      }
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  // Prevent double scroll or shifts when input is focused on mobile
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const handleViewportScroll = () => {
+      if (document.activeElement?.tagName === "TEXTAREA" || document.activeElement?.tagName === "INPUT") {
+        window.scrollTo(0, 0);
+      }
+    };
+
+    window.visualViewport.addEventListener("scroll", handleViewportScroll);
+    return () => {
+      window.visualViewport?.removeEventListener("scroll", handleViewportScroll);
+    };
+  }, []);
 
   const handleTerminateRoom = () => {
     setConfirmModal('terminate');
@@ -430,7 +481,10 @@ export default function RoomPage() {
 
 
   return (
-    <main className="h-screen w-full flex flex-col relative z-10 overflow-hidden font-sans bg-transparent">
+    <main 
+      style={{ height: viewportHeight }}
+      className="w-full flex flex-col relative z-10 overflow-hidden font-sans bg-transparent"
+    >
 
       {/* Confirmation Modal Overlay */}
       <AnimatePresence>
@@ -548,7 +602,7 @@ export default function RoomPage() {
       />
 
       {/* Header matching exact layout and icons */}
-      <header className="w-full h-20 px-4 md:px-6 flex justify-between items-center bg-black/10 backdrop-blur-md border-b border-white/5 relative z-20">
+      <header className="w-full h-20 px-4 md:px-6 flex justify-between items-center bg-black/10 backdrop-blur-md border-b border-white/5 relative z-20 shrink-0">
         
         {/* Glowing Cybernetic Status Monitor */}
         <div className="flex flex-col justify-center shrink-0">
@@ -818,7 +872,7 @@ export default function RoomPage() {
       </header>
 
       {/* Message Feed - pure transparent layout with background universe video */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide bg-transparent">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6 scrollbar-hide bg-transparent">
         
         {messages.map((msg, idx) => {
           const isMine = msg.isMine;
@@ -1109,7 +1163,7 @@ export default function RoomPage() {
       </AnimatePresence>
 
       {/* Bottom Input Area - fully transparent, no divider */}
-      <div className="p-3 md:p-6 bg-transparent">
+      <div className={`p-3 ${isKeyboardOpen ? 'pb-3' : 'pb-[calc(0.75rem+env(safe-area-inset-bottom))]'} md:p-6 bg-transparent shrink-0`}>
         <form onSubmit={handleFormSubmit} className="max-w-5xl mx-auto flex items-center gap-3 relative">
           
           {/* Main Input Container Pill - semi-transparent glass */}
