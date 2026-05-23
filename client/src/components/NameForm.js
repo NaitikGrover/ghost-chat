@@ -15,7 +15,7 @@ export default function NameForm({ setName }) {
   return (
     <form 
       onSubmit={handleSubmit}
-      className="flex flex-col gap-6 w-[400px] animate-in fade-in duration-700"
+      className="flex flex-col gap-6 w-full max-w-[400px] px-4 md:px-0 animate-in fade-in duration-700"
     >
       <div className="relative group">
         <input

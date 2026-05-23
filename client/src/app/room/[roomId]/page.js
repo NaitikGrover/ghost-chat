@@ -13,7 +13,7 @@ import {
   X, 
   Send, 
   Check, 
-  Ghost,
+  Shield,
   Volume2,
   Share2,
   LogOut,
@@ -26,7 +26,8 @@ import {
   FileText,
   Video,
   Music,
-  Archive
+  Archive,
+  MoreHorizontal
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -102,6 +103,8 @@ export default function RoomPage() {
   const [userCount, setUserCount] = useState(1);
   const [usersList, setUsersList] = useState([]);
   const [showUsersDrawer, setShowUsersDrawer] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showMicToast, setShowMicToast] = useState(false);
 
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState(null); // null | 'terminate' | 'leave' | 'make-admin'
@@ -402,7 +405,7 @@ export default function RoomPage() {
       <main className="h-screen w-full flex items-center justify-center relative z-10 p-6 font-sans bg-black">
         <div className="bg-[#1c1c1e] border border-white/5 p-8 rounded-3xl max-w-md w-full text-center space-y-6 animate-in zoom-in duration-500 shadow-2xl">
           <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto border border-red-500/20">
-            <Ghost className="w-8 h-8 text-red-500" />
+            <Shield className="w-8 h-8 text-red-500" />
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Connection Dropped</h2>
@@ -505,6 +508,36 @@ export default function RoomPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Mic Coming Soon Toast */}
+      <AnimatePresence>
+        {showMicToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-999 w-[90%] max-w-sm bg-[#0a0a0c]/95 backdrop-blur-3xl border border-blue-500/20 rounded-2xl p-4 shadow-[0_0_30px_rgba(59,130,246,0.15)] flex items-center gap-3.5"
+          >
+            <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 shrink-0 animate-pulse">
+              <Mic className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[8px] font-mono text-blue-500 uppercase tracking-widest block font-black mb-0.5">Transmission Blocked</span>
+              <p className="text-xs font-semibold text-zinc-200 tracking-wide">
+                Secure voice tunneling coming soon!
+              </p>
+            </div>
+            <button 
+              type="button"
+              onClick={() => setShowMicToast(false)}
+              className="p-1 rounded-full hover:bg-white/5 text-zinc-500 hover:text-zinc-300 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hidden File Picker */}
       <input 
         type="file" 
@@ -515,7 +548,7 @@ export default function RoomPage() {
       />
 
       {/* Header matching exact layout and icons */}
-      <header className="w-full h-20 px-6 flex justify-between items-center bg-black/10 backdrop-blur-md border-b border-white/5 relative z-20">
+      <header className="w-full h-20 px-4 md:px-6 flex justify-between items-center bg-black/10 backdrop-blur-md border-b border-white/5 relative z-20">
         
         {/* Glowing Cybernetic Status Monitor */}
         <div className="flex flex-col justify-center shrink-0">
@@ -542,20 +575,20 @@ export default function RoomPage() {
         </div>
 
         {/* Right Action Controls - Icon Only */}
-        <div className="flex items-center gap-2 mr-1">
+        <div className="flex items-center gap-1 sm:gap-2 mr-1">
           {/* Active Users Count and List Trigger */}
           <button
             type="button"
             title="Active Users"
             onClick={() => setShowUsersDrawer(true)}
-            className={`flex items-center gap-2 px-3 h-9 rounded-xl border transition-all duration-300 relative group overflow-hidden ${
+            className={`hidden sm:flex items-center gap-1.5 px-2 sm:px-3 h-8 sm:h-9 rounded-xl border transition-all duration-300 relative group overflow-hidden ${
               showUsersDrawer
                 ? "bg-white/15 border-white/20 text-white shadow-[0_0_15px_rgba(255,255,255,0.15)]"
                 : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-zinc-400 hover:text-white"
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span className="text-[11px] font-black tracking-widest font-mono">
+            <span className="text-[10px] sm:text-[11px] font-black tracking-widest font-mono">
               {userCount}
             </span>
           </button>
@@ -569,9 +602,9 @@ export default function RoomPage() {
               setCopiedLink(true);
               setTimeout(() => setCopiedLink(false), 2000);
             }}
-            className="flex items-center gap-2 px-3 h-9 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group"
+            className="hidden sm:flex items-center gap-1.5 px-2 sm:px-3 h-8 sm:h-9 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group"
           >
-            <span className="text-[11px] font-black tracking-[0.2em] uppercase text-zinc-400 group-hover:text-white transition-colors font-mono">
+            <span className="hidden sm:inline text-[11px] font-black tracking-[0.2em] uppercase text-zinc-400 group-hover:text-white transition-colors font-mono">
               {copiedLink ? "Copied!" : roomId}
             </span>
             {copiedLink
@@ -581,12 +614,12 @@ export default function RoomPage() {
           </button>
 
           {/* Share Button with beautiful glassmorphic popover */}
-          <div className="relative">
+          <div className="hidden sm:block relative">
             <button 
               type="button"
               title="Share Room"
               onClick={() => setShowShareMenu(!showShareMenu)}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all ${
                 showShareMenu
                   ? 'bg-white/15 border border-white/20 text-white'
                   : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-zinc-400 hover:text-white'
@@ -634,7 +667,7 @@ export default function RoomPage() {
 
                     {/* WhatsApp Button */}
                     <a
-                      href={`https://wa.me/?text=${encodeURIComponent(`Join my secure encrypted ghost room: ${typeof window !== "undefined" ? window.location.href : ""}`)}`}
+                      href={`https://wa.me/?text=${encodeURIComponent(`Join my secure Adyber room: ${typeof window !== "undefined" ? window.location.href : ""}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all group"
@@ -653,7 +686,7 @@ export default function RoomPage() {
             type="button"
             title="Leave Room"
             onClick={handleLeaveRoom}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-zinc-400 hover:text-white transition-all"
+            className="hidden sm:flex w-8 h-8 sm:w-9 sm:h-9 rounded-xl items-center justify-center bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-zinc-400 hover:text-white transition-all"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -664,11 +697,123 @@ export default function RoomPage() {
               type="button" 
               title="Terminate Room" 
               onClick={handleTerminateRoom}
-              className="w-9 h-9 rounded-xl flex items-center justify-center bg-red-500/10 border border-red-500/20 hover:bg-red-500/25 hover:border-red-500/40 text-red-400 hover:text-red-300 transition-all"
+              className="hidden sm:flex w-8 h-8 sm:w-9 sm:h-9 rounded-xl items-center justify-center bg-red-500/10 border border-red-500/20 hover:bg-red-500/25 hover:border-red-500/40 text-red-400 hover:text-red-300 transition-all"
             >
               <Power className="w-4 h-4" />
             </button>
           )}
+
+          {/* Mobile More Options Button */}
+          <div className="relative sm:hidden">
+            <button
+              type="button"
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                showMoreMenu
+                  ? 'bg-white/15 border border-white/20 text-white shadow-[0_0_12px_rgba(255,255,255,0.15)]'
+                  : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-zinc-400 hover:text-white'
+              }`}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+
+            {/* Mobile More Options Dropdown List */}
+            <AnimatePresence>
+              {showMoreMenu && (
+                <>
+                  {/* Backdrop */}
+                  <div 
+                    onClick={() => setShowMoreMenu(false)}
+                    className="fixed inset-0 z-40 bg-transparent"
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-56 bg-[#0a0a0c]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-50 p-2.5 flex flex-col gap-1"
+                  >
+                    {/* Active Users */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowUsersDrawer(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-zinc-300 hover:text-white transition-all text-left cursor-pointer"
+                    >
+                      <Users className="w-4 h-4 text-blue-400" />
+                      <span className="text-xs font-semibold">Active Users ({userCount})</span>
+                    </button>
+
+                    {/* Copy Code */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(roomId);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2000);
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 text-zinc-300 hover:text-white transition-all text-left cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        {copiedLink ? (
+                          <Check className="w-4 h-4 text-emerald-400 animate-in zoom-in duration-200" />
+                        ) : (
+                          <Copy className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" />
+                        )}
+                        <span className="text-xs font-semibold">{copiedLink ? "Copied!" : "Copy Code"}</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-500 font-bold">{roomId}</span>
+                    </button>
+
+                    {/* Share Room */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowShareMenu(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-zinc-300 hover:text-white transition-all text-left cursor-pointer"
+                    >
+                      <Share2 className="w-4 h-4 text-cyan-400" />
+                      <span className="text-xs font-semibold">Share Tunnel</span>
+                    </button>
+
+                    <div className="h-px bg-white/5 my-1 w-full" />
+
+                    {/* Leave Room */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        handleLeaveRoom();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-zinc-300 hover:text-white transition-all text-left cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4 text-amber-400" />
+                      <span className="text-xs font-semibold">Leave Room</span>
+                    </button>
+
+                    {/* Terminate Room (Admin Only) */}
+                    {name === roomDetails?.adminName && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMoreMenu(false);
+                          handleTerminateRoom();
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-red-400 hover:text-red-300 transition-all text-left border border-transparent hover:border-red-500/10 cursor-pointer"
+                      >
+                        <Power className="w-4 h-4 text-red-500" />
+                        <span className="text-xs font-semibold">Terminate Tunnel</span>
+                      </button>
+                    )}
+
+                  </motion.div>
+                </>
+                )}
+              </AnimatePresence>
+            </div>
         </div>
       </header>
 
@@ -708,7 +853,7 @@ export default function RoomPage() {
               className={`flex w-full items-end gap-3 ${rowGap} ${isMine ? "justify-end" : "justify-start"}`}
             >
               {/* Main message bubble block */}
-              <div className={`flex flex-col min-w-0 max-w-[70%] sm:max-w-[50%] relative`}>
+              <div className={`flex flex-col min-w-0 max-w-[85%] sm:max-w-[50%] relative`}>
                 
                 {/* Reply Indicator text above bubble */}
                 {msg.replyTo && (
@@ -758,7 +903,7 @@ export default function RoomPage() {
                         </button>
 
                         {/* Custom Waveform bars */}
-                        <div className="flex items-end gap-[2px] h-10 px-1 flex-1">
+                        <div className="flex items-end gap-[1.5px] sm:gap-[2px] h-10 px-1 flex-1">
                           {(msg.waveform || Array.from({ length: 28 }, () => 20)).map((val, wIdx) => {
                             const barProgress = (wIdx / 28) * 100;
                             const isActive = audioPlayback.messageId === msg.id && audioPlayback.progress >= barProgress;
@@ -766,7 +911,7 @@ export default function RoomPage() {
                               <div 
                                 key={wIdx} 
                                 style={{ height: `${val}%` }} 
-                                className={`w-[3px] rounded-full transition-all duration-300 ${
+                                className={`w-[2px] sm:w-[3px] rounded-full transition-all duration-300 ${
                                   isActive 
                                     ? "bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" 
                                     : "bg-white/35"
@@ -964,7 +1109,7 @@ export default function RoomPage() {
       </AnimatePresence>
 
       {/* Bottom Input Area - fully transparent, no divider */}
-      <div className="p-4 md:p-6 bg-transparent">
+      <div className="p-3 md:p-6 bg-transparent">
         <form onSubmit={handleFormSubmit} className="max-w-5xl mx-auto flex items-center gap-3 relative">
           
           {/* Main Input Container Pill - semi-transparent glass */}
@@ -982,12 +1127,13 @@ export default function RoomPage() {
             {/* Simulated Recording Wave Visualizer or Text Input */}
             {isRecording ? (
               <div className="flex-1 flex items-center justify-between text-xs text-red-500 font-bold tracking-wide">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
-                  <span>RECORDING SECURE AUDIO: {recordingSeconds}s</span>
+                  <span className="hidden sm:inline">RECORDING SECURE AUDIO: {recordingSeconds}s</span>
+                  <span className="sm:hidden text-[10px]">SECURE REC: {recordingSeconds}s</span>
                 </div>
                 {/* Visual bouncing recording bars */}
-                <div className="flex gap-[3px] items-center mr-4">
+                <div className="hidden sm:flex gap-[3px] items-center mr-4">
                   <div className="w-1.5 h-3 bg-red-500 rounded-full animate-pulse" />
                   <div className="w-1.5 h-5 bg-red-500 rounded-full animate-pulse delay-75" />
                   <div className="w-1.5 h-4 bg-red-500 rounded-full animate-pulse delay-150" />
@@ -1024,12 +1170,12 @@ export default function RoomPage() {
               ) : (
                 <button 
                   type="button" 
-                  onClick={toggleRecording}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shrink-0 ${
-                    isRecording 
-                      ? "bg-red-500/10 text-red-500 animate-pulse border border-red-500/20" 
-                      : "text-zinc-400 hover:text-white"
-                  }`}
+                  onClick={() => {
+                    setShowMicToast(true);
+                    const timeout = setTimeout(() => setShowMicToast(false), 3000);
+                    return () => clearTimeout(timeout);
+                  }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shrink-0 text-zinc-400 hover:text-white cursor-pointer"
                 >
                   <Mic className="w-[21px] h-[21px] stroke-[1.8]" />
                 </button>
@@ -1058,7 +1204,7 @@ export default function RoomPage() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="relative w-80 h-full bg-[#070708]/95 backdrop-blur-2xl border-l border-white/5 p-6 flex flex-col z-10 shadow-2xl justify-between"
+              className="relative w-full max-w-[320px] sm:w-80 h-full bg-[#070708]/95 backdrop-blur-2xl border-l border-white/5 p-6 flex flex-col z-10 shadow-2xl justify-between"
             >
               <div className="space-y-6 flex-1 overflow-y-auto scrollbar-hide">
                 {/* Header */}
@@ -1136,14 +1282,14 @@ export default function RoomPage() {
 
                         {/* Admin Action Triggers */}
                         {name === roomDetails?.adminName && !isSelf && (
-                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="flex items-center gap-1 sm:gap-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
                             <button
                               type="button"
                               onClick={() => {
                                 setTargetAdminUser(user.name);
                                 setConfirmModal('make-admin');
                               }}
-                              className="text-[9px] font-black tracking-widest uppercase border border-blue-500/30 text-blue-500/80 hover:text-blue-400 hover:bg-blue-500/10 px-2 py-1 rounded-lg transition-all"
+                              className="text-[9px] font-black tracking-widest uppercase border border-blue-500/30 text-blue-500/80 hover:text-blue-400 hover:bg-blue-500/10 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg transition-all"
                             >
                               ADMIN
                             </button>
@@ -1152,7 +1298,7 @@ export default function RoomPage() {
                               onClick={() => {
                                 socket.emit("kick-user", { roomId, adminName: name, userName: user.name });
                               }}
-                              className="text-[9px] font-black tracking-widest uppercase border border-amber-500/30 text-amber-500/80 hover:text-amber-400 hover:bg-amber-500/10 px-2 py-1 rounded-lg transition-all"
+                              className="text-[9px] font-black tracking-widest uppercase border border-amber-500/30 text-amber-500/80 hover:text-amber-400 hover:bg-amber-500/10 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg transition-all"
                             >
                               KICK
                             </button>
@@ -1161,7 +1307,7 @@ export default function RoomPage() {
                               onClick={() => {
                                 socket.emit("ban-user", { roomId, adminName: name, userName: user.name });
                               }}
-                              className="text-[9px] font-black tracking-widest uppercase border border-red-500/30 text-red-500/80 hover:text-red-400 hover:bg-red-500/10 px-2 py-1 rounded-lg transition-all"
+                              className="text-[9px] font-black tracking-widest uppercase border border-red-500/30 text-red-500/80 hover:text-red-400 hover:bg-red-500/10 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg transition-all"
                             >
                               BAN
                             </button>
@@ -1258,7 +1404,7 @@ export default function RoomPage() {
             
             {/* Footer Status / Decorative Info */}
             <div className="w-full text-center pb-2 text-[9px] font-mono text-zinc-600 uppercase tracking-widest animate-in slide-in-from-bottom duration-300">
-              Ghost Tunnel // Encrypted Transmission
+              Adyber // Encrypted Transmission
             </div>
           </motion.div>
         )}
